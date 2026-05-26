@@ -234,7 +234,13 @@ let systemActive = false;
 const raycaster  = new THREE.Raycaster();
 const mouse      = new THREE.Vector2();
 
+// Prevent synthetic click events fired by browser after touchend
+let lastTouchEnd = 0;
+window.addEventListener('touchend', () => { lastTouchEnd = Date.now(); }, { passive: true });
+
 window.addEventListener('click', (e) => {
+    // Skip if this is a synthetic click fired right after a touch event
+    if (Date.now() - lastTouchEnd < 400) return;
     // Skip if lightbox is open
     if (!lightbox.classList.contains('hidden')) return;
 
@@ -243,18 +249,16 @@ window.addEventListener('click', (e) => {
     raycaster.setFromCamera(mouse, camera);
 
     if (!systemActive) {
-        // Hit test on nucleus
         if (raycaster.intersectObjects(coreGroup.children, true).length > 0) {
             activateSystem();
         }
     } else {
-        // Hit test on photo panels
         const hits = raycaster.intersectObjects(
             photoMeshes.flatMap(g => g.children), true
         );
         if (hits.length > 0) {
-            const hitGroup = hits[0].object.parent; // the group
-            if (hitGroup.userData.src) openLightbox(encodeURI(hitGroup.userData.src));
+            const hitGroup = hits[0].object.parent;
+            if (hitGroup.userData.src) openLightbox(hitGroup.userData.src);
         }
     }
 });
@@ -289,18 +293,18 @@ function activateSystem() {
     container.style.cursor = 'pointer';
 }
 
-// ── Mouse tracking ─────────────────────────────────────────────────
+// ── Mouse & Touch tracking ─────────────────────────────────────────
 let mouseX = 0, mouseY = 0;
 let targetScrollY = 0;
 const halfW = window.innerWidth / 2;
 const halfH = window.innerHeight / 2;
 
+// ---- Mouse ----
 document.addEventListener('mousemove', e => {
     mouseX = e.clientX - halfW;
     mouseY = e.clientY - halfH;
 
     if (systemActive && camera.position.z < 5) {
-        // Hover over photos → show pointer
         mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
         mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -316,6 +320,92 @@ window.addEventListener('wheel', e => {
         targetScrollY = Math.max(-maxY, Math.min(maxY, targetScrollY));
     }
 });
+
+// ---- Touch (3D canvas only) ----
+let touchPrev = null;     // { x, y } of last touch position
+let isTouchDragging = false;
+const DRAG_THRESHOLD = 8; // px before we consider it a drag (not a tap)
+let touchStartPos = null;
+
+container.addEventListener('touchstart', e => {
+    if (!lightbox.classList.contains('hidden')) return; // lightbox handles its own touch
+    const t = e.touches[0];
+    touchStartPos = { x: t.clientX, y: t.clientY };
+    touchPrev     = { x: t.clientX, y: t.clientY };
+    isTouchDragging = false;
+}, { passive: true });
+
+container.addEventListener('touchmove', e => {
+    if (!lightbox.classList.contains('hidden')) return;
+    if (!touchPrev) return;
+
+    const t = e.touches[0];
+    const dx = t.clientX - touchPrev.x;
+    const dy = t.clientY - touchPrev.y;
+
+    // Mark as drag once moved beyond threshold
+    if (!isTouchDragging && touchStartPos) {
+        const totalDx = t.clientX - touchStartPos.x;
+        const totalDy = t.clientY - touchStartPos.y;
+        if (Math.sqrt(totalDx * totalDx + totalDy * totalDy) > DRAG_THRESHOLD) {
+            isTouchDragging = true;
+        }
+    }
+
+    if (isTouchDragging) {
+        e.preventDefault(); // prevent page scroll while rotating carousel
+
+        // Update mouseX for carousel rotation (same variable used in render loop)
+        mouseX += dx * 2;
+
+        // Vertical scroll through rows
+        if (systemActive && camera.position.z < 5) {
+            targetScrollY += dy * 0.03;
+            const maxY = Math.max((totalRows - 1) * 2.5, 0);
+            targetScrollY = Math.max(-maxY, Math.min(maxY, targetScrollY));
+        }
+
+        // Nucleus parallax before activation
+        if (!systemActive) {
+            mouseY -= dy * 2;
+        }
+    }
+
+    touchPrev = { x: t.clientX, y: t.clientY };
+}, { passive: false }); // passive:false needed for e.preventDefault()
+
+container.addEventListener('touchend', e => {
+    if (!lightbox.classList.contains('hidden')) return;
+
+    // If it was a tap (not a drag), treat like a click
+    if (!isTouchDragging && touchStartPos) {
+        const changedTouch = e.changedTouches[0];
+        const tapX = changedTouch.clientX;
+        const tapY = changedTouch.clientY;
+
+        mouse.x =  (tapX / window.innerWidth)  * 2 - 1;
+        mouse.y = -(tapY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        if (!systemActive) {
+            // Tap on nucleus → activate
+            if (raycaster.intersectObjects(coreGroup.children, true).length > 0) {
+                activateSystem();
+            }
+        } else {
+            // Tap on photo → open lightbox
+            const hits = raycaster.intersectObjects(photoMeshes.flatMap(g => g.children), true);
+            if (hits.length > 0) {
+                const hitGroup = hits[0].object.parent;
+                if (hitGroup.userData.src) openLightbox(hitGroup.userData.src);
+            }
+        }
+    }
+
+    touchPrev = null;
+    touchStartPos = null;
+    isTouchDragging = false;
+}, { passive: true });
 
 // ── Render loop ────────────────────────────────────────────────────
 const clock = new THREE.Clock();

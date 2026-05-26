@@ -20,6 +20,9 @@ body, html {
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     z-index: 1;
+    touch-action: none;   /* hand all touch events to JS, no browser scroll/zoom */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* UI Layer */
