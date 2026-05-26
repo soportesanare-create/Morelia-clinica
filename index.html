@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sanaré — Centro de Infusión</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <img src="logo_sanare.png" alt="Sanaré Logo" class="logo">
+            </div>
+            <div class="nav-title">
+                <h1>Sanaré</h1>
+                <p>Centro de Infusión &amp; Oncología</p>
+            </div>
+        </header>
+
+        <!-- Hint -->
+        <div class="hint" id="hud-hint">
+            <div class="hint-ring"></div>
+            <span>Toca el núcleo para ver las instalaciones</span>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer glass">
+            <div class="location-info">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pin-icon">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <div class="address-text">
+                    <strong>Dirección</strong>
+                    <p>General Pedro María Anaya 551, Chapultepec Sur, C.P. 58260, Morelia, Michoacán</p>
+                </div>
+            </div>
+            <a href="https://maps.google.com/?q=General+Pedro+María+Anaya+551,+Chapultepec+Sur,+C.P.+58260,+Morelia,+Michoacán" target="_blank" class="maps-btn">
+                Ver en Mapa
+            </a>
+        </footer>
+
+    </div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightbox" class="lightbox hidden">
+        <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+
+        <!-- Prev arrow -->
+        <button class="lb-arrow lb-prev" id="lb-prev" aria-label="Anterior">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="Instalación Sanaré">
+            <button class="lightbox-close" id="lightbox-close" aria-label="Cerrar">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="lb-counter" id="lb-counter">1 / 38</div>
+        </div>
+
+        <!-- Next arrow -->
+        <button class="lb-arrow lb-next" id="lb-next" aria-label="Siguiente">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
